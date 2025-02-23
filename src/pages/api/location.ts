@@ -16,7 +16,7 @@ export default async function handler(
         process.env.LOCATION_IQ_API_KEY
       }&q=${encodeURIComponent(
         query as string
-      )}&countrycodes=br&format=json&addressdetails=1&limit=10`
+      )}&countrycodes=br&format=json&addressdetails=1&limit=2`
     );
 
     if (!response.ok) {
@@ -24,7 +24,22 @@ export default async function handler(
     }
 
     const data = await response.json();
-    res.status(200).json(data); // Retorna os dados para o cliente
+
+    // Processa os dados para retornar apenas a cidade e a UF
+    const processedData = data.map((location: any) => {
+      const displayName = location.display_name;
+      const city =
+        location.address.city ||
+        location.address.town ||
+        location.address.village;
+      const state = location.address.state;
+
+      return {
+        display_name: city && state ? `${city}-${state}` : displayName,
+      };
+    });
+
+    res.status(200).json(processedData); // Retorna os dados processados
   } catch (error) {
     console.error("Erro na requisição:", error);
     res.status(500).json({ error: "Erro ao buscar endereço" });

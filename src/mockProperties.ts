@@ -1,5 +1,6 @@
-export const properties = [
+export const mockProperties = [
   {
+    id: "1",
     area: 175,
     banheiros: 3,
     condominio: "",
@@ -32,6 +33,7 @@ export const properties = [
     visualizacoes: 0,
   },
   {
+    id: "2",
     area: 150,
     banheiros: 3,
     condominio: "",
@@ -64,6 +66,7 @@ export const properties = [
     visualizacoes: 0,
   },
   {
+    id: "3",
     area: 300,
     banheiros: 5,
     condominio: "",
