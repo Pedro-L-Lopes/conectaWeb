@@ -107,7 +107,7 @@ const PropertyDetail = () => {
       </section>
 
       {/* Informações do imóvel */}
-      <div className="mt-2 mb-4 md:w-4/5 lg:md:w-4/5 p-1 rounded-md bg-gray-100 mt-5">
+      <div className="mt-5 mb-4 md:w-4/5 lg:md:w-4/5 p-1 rounded-md bg-gray-100">
         <div className="mt-2 mb-4 md:w-4/5 lg:md:w-4/5 p-1 rounded-md bg-gray-100">
           <h1 className="text-gray-800 text-lg mt-2">Especificações</h1>
           <div className="flex flex-wrap items-center gap-4 text-gray-700 text-sm sm:text-base">

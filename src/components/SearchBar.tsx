@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { BiArrowBack, BiSearch } from "react-icons/bi";
+import React, { useState, useEffect } from "react";
+import { BiArrowBack, BiSearch, BiX } from "react-icons/bi";
 import { BsSliders, BsChevronDown, BsChevronUp } from "react-icons/bs";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -26,6 +26,8 @@ interface SearchBarProps {
 
 const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState("");
   const [filters, setFilters] = useState<Filters>({
     city: "",
     neighborhood: "",
@@ -40,10 +42,69 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
     orderBy: "createdAt",
     sortDirection: "asc",
   });
-  const [showFilters, setShowFilters] = useState(false); // Estado para controlar a visibilidade dos filtros
+  const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchQuery.length < 3) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}&addressdetails=1&limit=5`
+        );
+        const data = await response.json();
+        const formattedSuggestions = data.map((item: any) => {
+          const neighborhood =
+            item.address.suburb || item.address.neighbourhood || "";
+          const city = item.address.municipality || "";
+          const state = item.address.state || "";
+          return `${neighborhood ? neighborhood + ", " : ""}${city}, ${state}`;
+        });
+
+        setSuggestions(formattedSuggestions);
+      } catch (error) {
+        console.error("Erro ao buscar sugestões:", error);
+      }
+    };
+
+    const debounce = setTimeout(fetchSuggestions, 500);
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
   const handleApplyFilters = () => {
     onSearch(filters);
+    setSuggestions([]);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    const [neighborhoodOrCity, cityOrState, state] = suggestion.split(", ");
+    setSearchQuery(suggestion);
+    setFilters({
+      ...filters,
+      neighborhood: state ? neighborhoodOrCity : "",
+      city: state ? cityOrState : neighborhoodOrCity,
+    });
+    setSelectedLocation(suggestion);
+    setSuggestions([]);
+  };
+
+  const handleCleaningFilters = () => {
+    setFilters({
+      city: "",
+      neighborhood: "",
+      minPrice: "",
+      maxPrice: "",
+      bedrooms: "",
+      parkingSpaces: "",
+      minArea: "",
+      maxArea: "",
+      type: "",
+      purpose: "",
+      orderBy: "createdAt",
+      sortDirection: "asc",
+    });
   };
 
   return (
@@ -54,6 +115,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
           <input
             type="text"
             placeholder="Pesquisa e filtros"
+            value={searchQuery}
             readOnly
             className="flex-1 px-4 py-2 outline-none cursor-pointer"
           />
@@ -77,21 +139,37 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </Dialog.Title>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <div className="flex items-center bg-gray-100 rounded-lg p-2">
               <BiSearch className="text-gray-500 text-xl ml-2" />
               <input
                 type="text"
-                placeholder="Pesquise por cidade"
+                placeholder="Pesquise por cidade e bairro"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setFilters({ ...filters, city: e.target.value });
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 px-4 py-2 outline-none bg-transparent"
                 autoFocus
               />
+              <BiX
+                size={22}
+                className="text-gray-500 text-xl ml-2 hover:scale-110 cursor-pointer"
+                onClick={(e) => setSearchQuery("")}
+              />
             </div>
+
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 bg-white border border-gray-300 rounded-lg shadow-lg w-full mt-1 max-h-60 overflow-y-auto">
+                {suggestions.map((suggestion, index) => (
+                  <li
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="p-2 hover:bg-gray-100 cursor-pointer transition-colors"
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Botão para alternar a visibilidade dos filtros */}
@@ -107,6 +185,7 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             )}
           </button>
 
+          {/* Seção de Filtros*/}
           {/* Seção de Filtros*/}
           {showFilters && (
             <div>
@@ -227,16 +306,28 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end gap-4">
-            <Dialog.Close asChild>
-              <button
-                onClick={handleApplyFilters}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Aplicar Filtros
-              </button>
-            </Dialog.Close>
-          </div>
+          <footer className="flex items-center justify-between">
+            <div className="mt-6 flex justify-end gap-4">
+              <Dialog.Close asChild>
+                <button
+                  onClick={handleCleaningFilters}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Limpar Filtros
+                </button>
+              </Dialog.Close>
+            </div>
+            <div className="mt-6 flex justify-end gap-4">
+              <Dialog.Close asChild>
+                <button
+                  onClick={handleApplyFilters}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Aplicar Filtros
+                </button>
+              </Dialog.Close>
+            </div>
+          </footer>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
