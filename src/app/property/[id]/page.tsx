@@ -22,6 +22,7 @@ const PropertyDetail = () => {
   const [property, setProperty] = useState<PropertyType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -35,10 +36,28 @@ const PropertyDetail = () => {
           setLoading(false);
         }
       };
-
       fetchProperty();
     }
   }, [id]);
+
+  useEffect(() => {
+    const storedFavorites = localStorage.getItem("favoriteProperties");
+    if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
+  }, []);
+
+  const handleSaveToFavorites = (propertyId: string) => {
+    let updatedFavorites = [...favorites];
+    if (!favorites.includes(propertyId)) {
+      updatedFavorites.push(propertyId);
+    } else {
+      updatedFavorites = updatedFavorites.filter((id) => id !== propertyId);
+    }
+    setFavorites(updatedFavorites);
+    localStorage.setItem(
+      "favoriteProperties",
+      JSON.stringify(updatedFavorites)
+    );
+  };
 
   if (loading) return <div className="p-4">Carregando...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -52,16 +71,7 @@ const PropertyDetail = () => {
 
   return (
     <div className="md:flex lg:flex flex-col justify-center items-center p-4 max-w-4xl mx-auto mt-5">
-      {/* Botão de voltar */}
-      {/* <button
-        onClick={() => window.history.back()}
-        className="flex items-center text-gray-700 border border-gray-300 rounded-full h-10 w-10 hover:bg-gray-300 transition"
-      >
-        <BsArrowLeft className="m-auto" size={20} />
-      </button> */}
-
       <section className="bg-gray-100 md:w-4/5 lg:md:w-4/5 rounded-md p-2">
-        {/* Título e Localização */}
         <h1 className="text-lg sm:text-lg font-bold text-gray-700">
           {property.purpose == "Venda"
             ? `${property.type} à venda`
@@ -72,7 +82,6 @@ const PropertyDetail = () => {
         </h1>
 
         <div className="flex items-center justify-between">
-          {/* Preço e findalidade*/}
           <div>
             <p className="text-2xl font-bold text-gray-800 mt-3 md:w-4/5 lg:md:w-4/5">
               {formatCurrency(property.price)}
@@ -81,7 +90,6 @@ const PropertyDetail = () => {
               {property.purpose}
             </p>
           </div>
-          {/* Bairro e condomínio */}
           <div className="text-[70%] text-gray-800 mt-5">
             <div className="flex items-center">
               <LuMapPin size={18} className="w-5" />
@@ -96,57 +104,60 @@ const PropertyDetail = () => {
           </div>
         </div>
 
-        {/* Imagem principal com botão de favoritar */}
         <div className="relative mt-4 h-64 sm:h-80 md:h-96">
           <Carousel images={photos} />
-          {/* Botão de favoritar */}
-          <button className="absolute top-2 right-2 p-2 rounded-full hover:scale-110 transition">
-            <FaHeart size={20} className="" />
+          <button
+            onClick={() => handleSaveToFavorites(property.id)}
+            className="absolute top-2 right-2 p-2 rounded-full hover:scale-110 transition"
+          >
+            <FaHeart
+              size={20}
+              className={`${
+                favorites.includes(property.id)
+                  ? "text-red-500"
+                  : "text-gray-400"
+              }`}
+            />
           </button>
         </div>
       </section>
 
-      {/* Informações do imóvel */}
       <div className="mt-5 mb-4 md:w-4/5 lg:md:w-4/5 p-1 rounded-md bg-gray-100">
-        <div className="mt-2 mb-4 md:w-4/5 lg:md:w-4/5 p-1 rounded-md bg-gray-100">
-          <h1 className="text-gray-800 text-lg mt-2">Especificações</h1>
-          <div className="flex flex-wrap items-center gap-4 text-gray-700 text-sm sm:text-base">
-            {property.area && (
-              <div className="flex items-center gap-1">
-                <FaExpand size={16} />
-                <span>
-                  {property.area} {property.areaUnit || "m²"}
-                </span>
-              </div>
-            )}
-            {property.bedrooms && (
-              <div className="flex items-center gap-1">
-                <FaBed size={16} />
-                <span>{property.bedrooms} quartos</span>
-              </div>
-            )}
-            {property.suites && (
-              <div className="flex items-center gap-1">
-                <FaBed size={16} />
-                <span>{property.suites} suítes</span>
-              </div>
-            )}
-            {property.bathrooms && (
-              <div className="flex items-center gap-1">
-                <FaShower size={16} />
-                <span>{property.bathrooms} banheiros</span>
-              </div>
-            )}
-            {property.parkingSpaces && (
-              <div className="flex items-center gap-1">
-                <FaCar size={16} />
-                <span>{property.parkingSpaces} vagas</span>
-              </div>
-            )}
-          </div>
+        <h1 className="text-gray-800 text-lg mt-2">Especificações</h1>
+        <div className="flex flex-wrap items-center gap-4 text-gray-700 text-sm sm:text-base">
+          {property.area && (
+            <div className="flex items-center gap-1">
+              <FaExpand size={16} />
+              <span>
+                {property.area} {property.areaUnit || "m²"}
+              </span>
+            </div>
+          )}
+          {property.bedrooms && (
+            <div className="flex items-center gap-1">
+              <FaBed size={16} />
+              <span>{property.bedrooms} quartos</span>
+            </div>
+          )}
+          {property.suites && (
+            <div className="flex items-center gap-1">
+              <FaBed size={16} />
+              <span>{property.suites} suítes</span>
+            </div>
+          )}
+          {property.bathrooms && (
+            <div className="flex items-center gap-1">
+              <FaShower size={16} />
+              <span>{property.bathrooms} banheiros</span>
+            </div>
+          )}
+          {property.parkingSpaces && (
+            <div className="flex items-center gap-1">
+              <FaCar size={16} />
+              <span>{property.parkingSpaces} vagas</span>
+            </div>
+          )}
         </div>
-
-        {/* Descrição */}
         <h1 className="text-gray-800 text-lg mt-4">Descrição</h1>
         <p className=" text-gray-700">{property.description}</p>
       </div>
